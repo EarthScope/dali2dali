@@ -1,0 +1,89 @@
+.TH DALI2DALI 1 2011/01/04
+.SH NAME
+dali2dali \- DataLink to DataLink
+
+Copy selected data from one DataLink server to another
+.SH SYNOPSIS
+.nf
+dali2dali [options] srchost desthost
+
+.fi
+.SH DESCRIPTION
+\fBdali2dali\fP connects to one \fIDataLink\fR server, requests data
+streams and forwards the received packets to another \fIDataLink\fR
+server.
+
+This program is designed to run continuously.  Because the DataLink
+protocol is stateful this program should be tolerant of connection
+breaks and subsequent re-connections.
+
+.SH OPTIONS
+
+.IP "-V         "
+Print program version and exit.
+
+.IP "-h         "
+Print program usage and exit.
+
+.IP "-v         "
+Be more verbose.  This flag can be used multiple times ("-v -v" or
+"-vv") for more verbosity.
+
+.IP "-x \fIstatefile\fR[:\fIinterval\fR]"
+During client shutdown the last received packet ID and time stamp
+(start times) for each data stream will be saved in this file.  If
+this file exists upon startup the information will be used to resume
+the data streams from the point at which they were stopped.  In this
+way the client can be stopped and started without data loss, assuming
+the data are still available on the server.  If \fIinterval\fR is
+specified the state will be saved every \fIinterval\fR packets that
+are received.  Otherwise the state will be saved only on normal
+program termination.
+
+.IP "-m \fImatch\fR"
+Specify a matching expression to send to the server.  This regular
+expression is used to either limit the stream packets collected by
+matching against the stream ID, nominally in the
+form 'NET_STA_LOC_CHAN/TYPE'.  If the expression begins with an '@'
+character it is assumed to be a file containing a list of expressions
+for matching.
+
+.IP "-r \fIreject\fR"
+Specify a rejecting expression to send to the server.  This regular
+expression is used to limit the stream packets collected and is
+logically opposite of the matching expression.  This expression is
+matched against the stream ID, nominally in the
+form 'NET_STA_LOC_CHAN/TYPE'.  If the expression begins with an '@'
+character it is assumed to be a file containing a list of expressions
+for rejecting.
+
+.IP "\fIsrchost\fR"
+Specifies the address of the source DataLink server in host:port format.
+Either the host, port or both can be omitted.  If host is omitted then
+localhost is assumed, i.e.  ':16000' implies 'localhost:16000'.  If
+the port is omitted then 16000 is assumed, i.e.  'localhost'
+implies 'localhost:16000'.  If only ':' is specified 'localhost:16000'
+is assumed.
+
+.IP "\fIdesthost\fR"
+Specifies the address of the destination DataLink server in host:port
+format (seed \fIsrchost\fP).  The destination can be the same as the
+source with the effect, which has the potential of creating a runaway
+spiral of data duplication.
+
+.SH "CAVEATS"
+
+After receiving a data packet from the source server the program will
+forward the packet to the destination server.  If the connection to
+the destination server is broken the program will continuously try to
+re-connect, if the program is terminated before the record is
+forwarded the packet will be lost because the statefile will be
+written as if the record were sucessfully forwarded.  The potential,
+while quite small, can be minimized by running dali2dali on the same
+host as the destination server.
+
+.SH AUTHOR
+.nf
+Chad Trabant
+IRIS Data Management Center
+.fi
