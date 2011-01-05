@@ -90,7 +90,9 @@ main (int argc, char **argv)
   if ( srcdlcp->pktid > 0 )
     {
       if ( dl_position (srcdlcp, srcdlcp->pktid, srcdlcp->pkttime) < 0 )
-        return -1;
+	dl_log (2, 0, "Cannot resume connection to previous state\n");
+      else
+	dl_log (2, 0, "Connection resumed to packet ID %lld\n", (long long int)srcdlcp->pktid);
     }
   
   /* Send match pattern if supplied */
@@ -110,6 +112,16 @@ main (int argc, char **argv)
   /* Collect packets in streaming mode */
   while ( dl_collect (srcdlcp, &dlpacket, packetdata, sizeof(packetdata), 0) == DLPACKET )
     {
+      if ( verbose > 1 )
+	{
+	  char timestr[50];
+	  
+	  dl_dltime2seedtimestr (dlpacket.datastart, timestr, 1);
+	  
+	  dl_log (1, 0, "Forwarding packet %s, %s, %d bytes\n",
+		  dlpacket.streamid, timestr, dlpacket.datasize);
+	}
+      
       /* Send packet to the destination DataLink server, reconnecting if needed */
       while ( dl_write (destdlcp, packetdata, dlpacket.datasize, dlpacket.streamid,
 			dlpacket.datastart, dlpacket.dataend, writeack) < 0 )
