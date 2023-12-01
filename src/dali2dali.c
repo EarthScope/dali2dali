@@ -26,7 +26,7 @@
 static int  parameter_proc (int argcount, char **argvec);
 static char *getoptval (int argcount, char **argvec, int argopt);
 static void term_handler (int sig);
-static void print_timelog (char *msg);
+static void print_timelog (const char *msg);
 static void usage (void);
 
 static short int verbose   = 0;  /* Flag to control general verbosity */
@@ -63,7 +63,7 @@ main (int argc, char **argv)
   sigaction (SIGHUP, &sa, NULL);
   sigaction (SIGPIPE, &sa, NULL);
 #endif
-  
+
   /* Process specified parameters */
   if ( parameter_proc (argc, argv) < 0 )
     {
@@ -71,21 +71,21 @@ main (int argc, char **argv)
       fprintf (stderr, "Try '-h' for detailed help\n");
       return -1;
     }
-  
+
   /* Connect to source DataLink server */
   if ( dl_connect (srcdlcp) < 0 )
     {
       dl_log (2, 0, "Error connecting to source DataLink server: %s\n", srcdlcp->addr);
       return -1;
     }
-  
+
   /* Connect to destination DataLink server */
   if ( dl_connect (destdlcp) < 0 )
     {
       dl_log (2, 0, "Error connecting to destination DataLink server: %s\n", destdlcp->addr);
       return -1;
     }
-  
+
   /* Reposition connection */
   if ( srcdlcp->pktid > 0 )
     {
@@ -94,52 +94,52 @@ main (int argc, char **argv)
       else
 	dl_log (2, 0, "Connection resumed to packet ID %lld\n", (long long int)srcdlcp->pktid);
     }
-  
+
   /* Send match pattern if supplied */
   if ( matchpattern )
     {
       if ( dl_match (srcdlcp, matchpattern) < 0 )
         return -1;
     }
-  
+
   /* Send reject pattern if supplied */
   if ( rejectpattern )
     {
       if ( dl_reject (srcdlcp, rejectpattern) < 0 )
         return -1;
     }
-  
+
   /* Collect packets in streaming mode */
   while ( dl_collect (srcdlcp, &dlpacket, packetdata, sizeof(packetdata), 0) == DLPACKET )
     {
       if ( verbose > 1 )
 	{
 	  char timestr[50];
-	  
+
 	  dl_dltime2seedtimestr (dlpacket.datastart, timestr, 1);
-	  
+
 	  dl_log (1, 0, "Forwarding packet %s, %s, %d bytes\n",
 		  dlpacket.streamid, timestr, dlpacket.datasize);
 	}
-      
+
       /* Send packet to the destination DataLink server, reconnecting if needed */
       while ( dl_write (destdlcp, packetdata, dlpacket.datasize, dlpacket.streamid,
 			dlpacket.datastart, dlpacket.dataend, writeack) < 0 )
 	{
 	  if ( verbose )
 	    dl_log (2, 0, "Re-connecting to destination DataLink server\n");
-	  
+
 	  /* Re-connect to destination DataLink server and sleep if error connecting */
 	  if ( destdlcp->link != -1 )
 	    dl_disconnect (destdlcp);
-	  
+
 	  if ( dl_connect (destdlcp) < 0 )
 	    {
 	      dl_log (2, 0, "Error re-connecting to destination DataLink server, sleeping 10 seconds\n");
 	      sleep (10);
 	    }
 	}
-      
+
       /* Save intermediate state files */
       if ( statefile && stateint )
 	{
@@ -148,23 +148,23 @@ main (int argc, char **argv)
 	      dl_savestate (srcdlcp, statefile);
 	      packetcnt = 0;
 	    }
-	  
+
 	  packetcnt++;
 	}
     }
-  
+
   /* Shut down the connection to source DataLink server */
   if ( srcdlcp->link != -1 )
     dl_disconnect (srcdlcp);
-  
+
   /* Shut down the connection to destination DataLink server */
   if ( destdlcp->link != -1 )
     dl_disconnect (destdlcp);
-  
+
   /* Save state file for source connection */
   if ( statefile )
     dl_savestate (srcdlcp, statefile);
-  
+
   return 0;
 }  /* End of main() */
 
@@ -183,7 +183,7 @@ parameter_proc (int argcount, char **argvec)
   char *destaddress = 0;
   char *tptr;
   int error = 0;
-  
+
   if (argcount <= 1)
     error++;
 
@@ -235,30 +235,30 @@ parameter_proc (int argcount, char **argvec)
 	  exit (1);
 	}
     }
-  
+
   /* Make sure a source DataLink server was specified */
   if ( ! srcaddress )
     {
       fprintf (stderr, "No source DataLink server specified\n\n");
-      fprintf (stderr, "%s version %s\n\n", PACKAGE, VERSION); 
+      fprintf (stderr, "%s version %s\n\n", PACKAGE, VERSION);
       fprintf (stderr, "Usage: %s [options] slhost dlhost\n\n", PACKAGE);
       fprintf (stderr, "Try '-h' for detailed help\n");
       exit (1);
     }
-  
+
   /* Make sure a destination DataLink server was specified */
   if ( ! destaddress )
     {
       fprintf (stderr, "No destination DataLink server specified\n\n");
-      fprintf (stderr, "%s version %s\n\n", PACKAGE, VERSION); 
+      fprintf (stderr, "%s version %s\n\n", PACKAGE, VERSION);
       fprintf (stderr, "Usage: %s [options] slhost dlhost\n\n", PACKAGE);
       fprintf (stderr, "Try '-h' for detailed help\n");
       exit (1);
     }
-  
+
   /* Initialize the verbosity for the dl_log function */
   dl_loginit (verbose, &print_timelog, "", &print_timelog, "");
-  
+
   /* Set stdout (where logs go) to always flush after a newline */
   setvbuf(stdout, NULL, _IOLBF, 0);
 
@@ -268,48 +268,48 @@ parameter_proc (int argcount, char **argvec)
       fprintf (stderr, "Cannot allocation source DataLink descriptor\n");
       exit (1);
     }
-  
+
   /* Allocate and initialize destination DataLink connection description */
   if ( ! (destdlcp = dl_newdlcp (destaddress, argvec[0])) )
     {
       fprintf (stderr, "Cannot allocation destination DataLink descriptor\n");
       exit (1);
     }
-  
+
   /* Load the match stream list from a file if the argument starts with '@' */
   if ( matchpattern && *matchpattern == '@' )
     {
       char *filename = matchpattern + 1;
-      
+
       if ( ! (matchpattern = dl_read_streamlist (srcdlcp, filename)) )
         {
           dl_log (2, 0, "Cannot read matching list file: %s\n", filename);
           exit (1);
         }
     }
-  
+
   /* Load the reject stream list from a file if the argument starts with '@' */
   if ( rejectpattern && *rejectpattern == '@' )
     {
       char *filename = rejectpattern + 1;
-      
+
       if ( ! (rejectpattern = dl_read_streamlist (srcdlcp, filename)) )
         {
           dl_log (2, 0, "Cannot read rejecting list file: %s\n", filename);
           exit (1);
         }
     }
-  
+
   /* Report the program version */
   dl_log (1, 0, "%s version: %s\n", PACKAGE, VERSION);
-  
+
   /* If errors then report the usage message and quit */
   if ( error )
     {
       usage ();
       exit (1);
     }
-  
+
   /* Attempt to recover sequence numbers from state file */
   if ( statefile )
     {
@@ -317,11 +317,11 @@ parameter_proc (int argcount, char **argvec)
       if ( (tptr = strchr (statefile, ':')) != NULL )
 	{
 	  char *tail;
-	  
+
 	  *tptr++ = '\0';
-	  
+
 	  stateint = (unsigned int) strtoul (tptr, &tail, 0);
-	  
+
 	  if ( *tail || (stateint < 0 || stateint > 1e9) )
 	    {
 	      dl_log (2, 0, "state saving interval specified incorrectly\n");
@@ -334,7 +334,7 @@ parameter_proc (int argcount, char **argvec)
 	  dl_log (2, 0, "state recovery failed\n");
 	}
     }
-  
+
   return 0;
 }  /* End of parameter_proc() */
 
@@ -342,7 +342,7 @@ parameter_proc (int argcount, char **argvec)
 /***************************************************************************
  * getoptval:
  *
- * Return the value to a command line option; checking that the value is 
+ * Return the value to a command line option; checking that the value is
  * itself not an option (starting with '-') and is not past the end of
  * the argument list.
  *
@@ -386,16 +386,16 @@ term_handler (int sig)
  * time string to the message before printing.
  ***************************************************************************/
 static void
-print_timelog (char *msg)
+print_timelog (const char *msg)
 {
   char timestr[100];
   time_t loc_time;
-  
+
   /* Build local time string and cut off the newline */
   time(&loc_time);
   strcpy(timestr, asctime(localtime(&loc_time)));
   timestr[strlen(timestr) - 1] = '\0';
-  
+
   fprintf (stdout, "%s - %s", timestr, msg);
 }
 
@@ -425,5 +425,5 @@ usage (void)
 	   " srchost   Address of the source DataLink server in host:port format\n\n"
 	   " desthost  Address of the destination DataLink server in host:port format\n\n"
 	   "             Default host is 'localhost' and default port is '16000'\n\n");
-  
+
 }  /* End of usage() */
