@@ -1,3 +1,7 @@
+2023.335:
+	- Update documentation.
+	- Update to libdali v1.8.1
+
 2011.005: 0.1
 	- Initial version, branch from slink2dali 0.4.
 	- Update to libdali 1.4.
