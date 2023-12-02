@@ -5,13 +5,13 @@
 #   CFLAGS : Specify compiler options to use
 
 # Required compiler parameters
-CFLAGS += -I../libdali -I../libmseed
+CFLAGS += -I../libdali
 
-LDFLAGS = -L../libdali -L../libmseed
-LDLIBS  = -ldali -lmseed
+LDFLAGS = -L../libdali
+LDLIBS  = -ldali
 
-# For SunOS/Solaris uncomment the following line
-#LDLIBS = -ldali -lmseed -lsocket -lnsl -lrt
+# For older SunOS/Solaris uncomment the following line
+#LDLIBS = -ldali -lsocket -lnsl -lrt
 
 BIN  = ../dali2dali
 

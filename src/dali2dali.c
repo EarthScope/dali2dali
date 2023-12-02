@@ -18,10 +18,9 @@
 #include <time.h>
 
 #include <libdali.h>
-#include <libmseed.h>
 
 #define PACKAGE   "dali2dali"
-#define VERSION   "0.1"
+#define VERSION   "0.2"
 
 static int  parameter_proc (int argcount, char **argvec);
 static char *getoptval (int argcount, char **argvec, int argopt);
