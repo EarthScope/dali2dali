@@ -1,3 +1,6 @@
+2023.343: 0.3
+	- Add missing files from libdali v1.8.1
+
 2023.335: 0.2
 	- Update documentation
 	- Update to libdali v1.8.1

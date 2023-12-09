@@ -20,7 +20,7 @@
 #include <libdali.h>
 
 #define PACKAGE   "dali2dali"
-#define VERSION   "0.2"
+#define VERSION   "0.3"
 
 static int  parameter_proc (int argcount, char **argvec);
 static char *getoptval (int argcount, char **argvec, int argopt);
